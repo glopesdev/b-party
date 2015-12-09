@@ -1,0 +1,349 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WorkflowBuilder Version="2.2.0-ctp">
+  <Workflow xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns:q2="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp" xmlns:q3="clr-namespace:Bonsai.Audio;assembly=Bonsai.Audio" xmlns:q4="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns="https://horizongir.org/bonsai">
+    <Nodes>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:FileCapture">
+          <q1:FileName>video.avi</q1:FileName>
+          <q1:PlaybackRate>0</q1:PlaybackRate>
+          <q1:StartPosition>0</q1:StartPosition>
+          <q1:PositionUnits>Frames</q1:PositionUnits>
+          <q1:Loop>true</q1:Loop>
+          <q1:Playing>true</q1:Playing>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Scan">
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Value</Selector>
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Accumulation</Selector>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Zip" />
+            </Expression>
+            <Expression xsi:type="Add" />
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:WarpAffine">
+                <q1:Transform>1.008028,0,-2.890091;0,1.008028,-2.890091</q1:Transform>
+                <q1:Flags>Linear</q1:Flags>
+                <q1:FillValue>
+                  <q1:Val0>0</q1:Val0>
+                  <q1:Val1>0</q1:Val1>
+                  <q1:Val2>0</q1:Val2>
+                  <q1:Val3>0</q1:Val3>
+                </q1:FillValue>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q2:ConvertScale">
+                <q2:Depth xsi:nil="true" />
+                <q2:Scale>0.5</q2:Scale>
+                <q2:Shift>0</q2:Shift>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q2:ConvertScale">
+                <q2:Depth xsi:nil="true" />
+                <q2:Scale>0.9</q2:Scale>
+                <q2:Shift>0</q2:Shift>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfMatWarpAffine">
+              <MemberName>Transform</MemberName>
+              <Name>Transform</Name>
+              <Value />
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:AffineTransform">
+                <q1:Pivot>
+                  <q1:X>360</q1:X>
+                  <q1:Y>360</q1:Y>
+                </q1:Pivot>
+                <q1:Translation>
+                  <q1:X>0</q1:X>
+                  <q1:Y>0</q1:Y>
+                </q1:Translation>
+                <q1:Rotation>0</q1:Rotation>
+                <q1:Scale>
+                  <q1:X>1.008028</q1:X>
+                  <q1:Y>1.008028</q1:Y>
+                </q1:Scale>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="SubscribeSubject">
+              <Name>Volume</Name>
+            </Expression>
+            <Expression xsi:type="PropertyMapping">
+              <PropertyMappings>
+                <Property name="Scale" selector="Source,Source" />
+              </PropertyMappings>
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>0</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>7</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>6</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>5</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>5</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>6</From>
+              <To>8</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>7</From>
+              <To>4</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>8</From>
+              <To>4</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>9</From>
+              <To>6</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>10</From>
+              <To>9</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>11</From>
+              <To>12</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>12</From>
+              <To>10</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q3:AudioCapture">
+          <q3:Frequency>44100</q3:Frequency>
+          <q3:BufferLength>10</q3:BufferLength>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:Abs" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:Sum" />
+      </Expression>
+      <Expression xsi:type="PublishSubject">
+        <Name>Volume</Name>
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Source.Val0</Selector>
+      </Expression>
+      <Expression xsi:type="NestedWorkflow">
+        <Name>Map</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="q4:PythonTransform">
+              <q4:Script>@returns(float)
+def process(value):
+  x = value.Item1
+  in_min = value.Item2
+  in_max = value.Item3
+  out_min = value.Item4
+  out_max = value.Item5
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min</q4:Script>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="CombineLatest" />
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="FloatProperty">
+                <Value>0</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="FloatProperty">
+                <Value>900000</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="FloatProperty">
+                <Value>1.001</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="FloatProperty">
+                <Value>1.2</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfSingleFloatProperty">
+              <MemberName>Value</MemberName>
+              <Name>MinInput</Name>
+              <Value>0</Value>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfSingleFloatProperty">
+              <MemberName>Value</MemberName>
+              <Name>MaxInput</Name>
+              <Value>900000</Value>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfSingleFloatProperty">
+              <MemberName>Value</MemberName>
+              <Name>MinOutput</Name>
+              <Value>1.001</Value>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfSingleFloatProperty">
+              <MemberName>Value</MemberName>
+              <Name>MaxOutput</Name>
+              <Value>1.2</Value>
+            </Expression>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>11</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>1</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>1</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>1</To>
+              <Label>Source3</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>1</To>
+              <Label>Source4</Label>
+            </Edge>
+            <Edge>
+              <From>5</From>
+              <To>1</To>
+              <Label>Source5</Label>
+            </Edge>
+            <Edge>
+              <From>6</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>7</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>8</From>
+              <To>4</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>9</From>
+              <To>5</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>10</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+    </Nodes>
+    <Edges>
+      <Edge>
+        <From>0</From>
+        <To>1</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>2</From>
+        <To>3</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>3</From>
+        <To>4</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>4</From>
+        <To>6</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>6</From>
+        <To>7</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>7</From>
+        <To>5</To>
+        <Label>Source1</Label>
+      </Edge>
+    </Edges>
+  </Workflow>
+  <ExtensionTypes>
+    <Type>Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Zip, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.AddBuilder, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.WarpAffine, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Dsp.ConvertScale, Bonsai.Dsp, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[OpenCV.Net.Mat, OpenCV.Net, Version=3.3.0.0, Culture=neutral, PublicKeyToken=null],[Bonsai.Vision.WarpAffine, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.AffineTransform, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.PropertyMappingBuilder, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ScanBuilder, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Audio.AudioCapture, Bonsai.Audio, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Dsp.Abs, Bonsai.Dsp, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Dsp.Sum, Bonsai.Dsp, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.PythonTransform, Bonsai.Scripting, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.CombineLatest, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.FloatProperty, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Expressions.FloatProperty, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+  </ExtensionTypes>
+</WorkflowBuilder>
