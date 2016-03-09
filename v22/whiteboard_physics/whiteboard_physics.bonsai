@@ -1,0 +1,693 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WorkflowBuilder Version="2.3.0-alpha">
+  <Workflow xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q1="clr-namespace:Bonsai.Shaders;assembly=Bonsai.Shaders" xmlns:q2="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q3="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns:q4="clr-namespace:Bonsai.Physics.Collision;assembly=Bonsai.Physics" xmlns:q5="clr-namespace:Bonsai.Physics;assembly=Bonsai.Physics" xmlns:q6="clr-namespace:Bonsai.Physics.Joints;assembly=Bonsai.Physics" xmlns="https://horizongir.org/bonsai">
+    <Nodes>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Switch" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:SampleOnUpdateFrame" />
+      </Expression>
+      <Expression xsi:type="q2:PythonTransform">
+        <q2:Script>import clr
+clr.AddReference("Ode.Net")
+clr.AddReference("OpenCV.Net")
+from OpenCV.Net import Point
+from Ode.Net.Collision import TriMeshData
+from System import Array, Single
+
+depth = 10
+
+def trimesh(points):
+  data = TriMeshData()
+  verts = []
+  inds = []
+  vcount = 0
+  for i,p in enumerate(points):
+    x = 120 * (640 - p.X) / 640.0 - 60
+    y = 80 * (480 - p.Y) / 480.0 - 40
+    verts.append(x)
+    verts.append(y)
+    verts.append(-depth)
+    verts.append(x)
+    verts.append(y)
+    verts.append(depth)
+    if i &gt; 0:
+      inds.append(vcount+1)
+      inds.append(vcount+1)
+      inds.append(vcount+0)
+      inds.append(vcount-2)
+    if i &lt; len(points)-1:
+      inds.append(vcount+0)
+      inds.append(vcount+1)
+    vcount += 2
+  data.BuildSingle(Array[Single](verts),Array[int](inds))
+  return data
+
+@returns(Array[TriMeshData])
+def process(value):
+  result = []
+  for region in value:
+    points = Array.CreateInstance(Point, region.Contour.Count + 1)
+    region.Contour.CopyTo(points)
+    points[-1] = points[0]
+    result.append(trimesh(points))
+  return Array[TriMeshData](result)</q2:Script>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q3:BinaryRegionAnalysis" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q3:FindContours">
+          <q3:Mode>External</q3:Mode>
+          <q3:Method>ChainApproxNone</q3:Method>
+          <q3:Offset>
+            <q3:X>0</q3:X>
+            <q3:Y>0</q3:Y>
+          </q3:Offset>
+          <q3:MinArea>1000</q3:MinArea>
+          <q3:MaxArea xsi:nil="true" />
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q3:Threshold">
+          <q3:ThresholdValue>60</q3:ThresholdValue>
+          <q3:MaxValue>255</q3:MaxValue>
+          <q3:ThresholdType>BinaryInv</q3:ThresholdType>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q3:Grayscale" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q3:CameraCapture">
+          <q3:Index>0</q3:Index>
+          <q3:CaptureProperties />
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="ReplaySubject">
+        <Name>Camera</Name>
+        <BufferSize xsi:nil="true" />
+      </Expression>
+      <Expression xsi:type="ReplaySubject">
+        <Name>Space</Name>
+        <BufferSize xsi:nil="true" />
+      </Expression>
+      <Expression xsi:type="NestedWorkflow">
+        <Name>CreateCamera</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:CreateLookAt">
+                <q1:Eye>
+                  <q1:X>0</q1:X>
+                  <q1:Y>0</q1:Y>
+                  <q1:Z>100</q1:Z>
+                </q1:Eye>
+                <q1:Target>
+                  <q1:X>0</q1:X>
+                  <q1:Y>0</q1:Y>
+                  <q1:Z>0</q1:Z>
+                </q1:Target>
+                <q1:Up>
+                  <q1:X>0</q1:X>
+                  <q1:Y>1</q1:Y>
+                  <q1:Z>0</q1:Z>
+                </q1:Up>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Zip" />
+            </Expression>
+            <Expression xsi:type="Multiply" />
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:CreateOrthographic">
+                <q1:Width>120</q1:Width>
+                <q1:Height>80</q1:Height>
+                <q1:NearClip>0.1</q1:NearClip>
+                <q1:FarClip>1000</q1:FarClip>
+              </Combinator>
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>0</From>
+              <To>5</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>4</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>5</From>
+              <To>3</To>
+              <Label>Source2</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q4:CreateHashSpace">
+          <q4:MaxContacts>10</q4:MaxContacts>
+          <q4:ExcludeConnected>true</q4:ExcludeConnected>
+          <q4:CollisionHandlers>
+            <q4:CollisionHandler>
+              <q4:Material1>Wall</q4:Material1>
+              <q4:Material2>Particle</q4:Material2>
+              <q4:CollisionSurface>
+                <q4:Mode>Bounce</q4:Mode>
+                <q4:Mu>10</q4:Mu>
+                <q4:Mu2>0</q4:Mu2>
+                <q4:Rho>0</q4:Rho>
+                <q4:Rho2>0</q4:Rho2>
+                <q4:RhoN>0</q4:RhoN>
+                <q4:Bounce>0.1</q4:Bounce>
+                <q4:BounceVelocity>0</q4:BounceVelocity>
+                <q4:SoftErp>0</q4:SoftErp>
+                <q4:SoftCfm>0</q4:SoftCfm>
+                <q4:Motion1>0</q4:Motion1>
+                <q4:Motion2>0</q4:Motion2>
+                <q4:MotionN>0</q4:MotionN>
+                <q4:Slip1>0</q4:Slip1>
+                <q4:Slip2>0</q4:Slip2>
+              </q4:CollisionSurface>
+            </q4:CollisionHandler>
+            <q4:CollisionHandler>
+              <q4:Material1>Particle</q4:Material1>
+              <q4:Material2>Particle</q4:Material2>
+              <q4:CollisionSurface>
+                <q4:Mode>Approx0</q4:Mode>
+                <q4:Mu>0</q4:Mu>
+                <q4:Mu2>0</q4:Mu2>
+                <q4:Rho>0</q4:Rho>
+                <q4:Rho2>0</q4:Rho2>
+                <q4:RhoN>0</q4:RhoN>
+                <q4:Bounce>0</q4:Bounce>
+                <q4:BounceVelocity>0</q4:BounceVelocity>
+                <q4:SoftErp>0</q4:SoftErp>
+                <q4:SoftCfm>0</q4:SoftCfm>
+                <q4:Motion1>0</q4:Motion1>
+                <q4:Motion2>0</q4:Motion2>
+                <q4:MotionN>0</q4:MotionN>
+                <q4:Slip1>0</q4:Slip1>
+                <q4:Slip2>0</q4:Slip2>
+              </q4:CollisionSurface>
+            </q4:CollisionHandler>
+          </q4:CollisionHandlers>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="ReplaySubject">
+        <Name>World</Name>
+        <BufferSize xsi:nil="true" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q5:CreateWorld">
+          <q5:Gravity>
+            <q5:X>0</q5:X>
+            <q5:Y>-9</q5:Y>
+            <q5:Z>0</q5:Z>
+          </q5:Gravity>
+          <q5:StepSize>0.016</q5:StepSize>
+          <q5:Cfm>1E-10</q5:Cfm>
+          <q5:Erp>0.2</q5:Erp>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Source.EventArgs.Time</Selector>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:UpdateFrame" />
+      </Expression>
+      <Expression xsi:type="WindowWorkflow">
+        <Name>CreateContourMesh</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+            <Expression xsi:type="SubscribeSubject">
+              <Name>Space</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="CombineLatest" />
+            </Expression>
+            <Expression xsi:type="InputMapping">
+              <PropertyMappings>
+                <Property name="Data" selector="Source.Item1" />
+              </PropertyMappings>
+              <Selector>Source.Item2</Selector>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q4:CreateTriMesh">
+                <q4:CategoryBits>2</q4:CategoryBits>
+                <q4:CollideBits>1</q4:CollideBits>
+                <q4:Material>Wall</q4:Material>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="TakeUntil" />
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:WindowClosed" />
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>3</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>4</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>5</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>5</From>
+              <To>6</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>6</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>7</From>
+              <To>6</To>
+              <Label>Source2</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:Timer">
+          <q1:DueTime>PT0S</q1:DueTime>
+          <q1:Period>PT0.1S</q1:Period>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="SelectMany">
+        <Name>CreateParticle</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+            <Expression xsi:type="SubscribeSubject">
+              <Name>World</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q5:CreateBody">
+                <q5:Position>
+                  <q5:X>0</q5:X>
+                  <q5:Y>40</q5:Y>
+                  <q5:Z>0</q5:Z>
+                </q5:Position>
+                <q5:Orientation>
+                  <q5:W>1</q5:W>
+                  <q5:X>0</q5:X>
+                  <q5:Y>0</q5:Y>
+                  <q5:Z>0</q5:Z>
+                </q5:Orientation>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Sink">
+              <Name>DrawBody</Name>
+              <Workflow>
+                <Nodes>
+                  <Expression xsi:type="WorkflowInput">
+                    <Name>Source1</Name>
+                  </Expression>
+                  <Expression xsi:type="WorkflowOutput" />
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q5:BodyTransform" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="CombineLatest" />
+                  </Expression>
+                  <Expression xsi:type="SubscribeSubject">
+                    <Name>Camera</Name>
+                  </Expression>
+                  <Expression xsi:type="Multiply" />
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q1:UpdateUniform">
+                      <q1:UniformName>mvp</q1:UniformName>
+                      <q1:ShaderName>Sphere</q1:ShaderName>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q1:DrawShader">
+                      <q1:ShaderName>Sphere</q1:ShaderName>
+                      <q1:DrawMode>Triangles</q1:DrawMode>
+                    </Combinator>
+                  </Expression>
+                </Nodes>
+                <Edges>
+                  <Edge>
+                    <From>0</From>
+                    <To>2</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>2</From>
+                    <To>3</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>3</From>
+                    <To>5</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>4</From>
+                    <To>3</To>
+                    <Label>Source2</Label>
+                  </Edge>
+                  <Edge>
+                    <From>5</From>
+                    <To>6</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>6</From>
+                    <To>7</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>7</From>
+                    <To>1</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                </Edges>
+              </Workflow>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q5:CreateSphereMass">
+                <q5:Radius>1</q5:Radius>
+                <q5:TotalMass>1</q5:TotalMass>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q4:CreateSphere">
+                <q4:CategoryBits xsi:nil="true" />
+                <q4:CollideBits xsi:nil="true" />
+                <q4:Material>Particle</q4:Material>
+                <q4:Radius>1</q4:Radius>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="SubscribeSubject">
+              <Name>Space</Name>
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Source.Body</Selector>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q6:CreatePlane2D" />
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="TakeUntil" />
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:WindowClosed" />
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>2</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>4</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>5</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>5</From>
+              <To>6</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>6</From>
+              <To>8</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>7</From>
+              <To>6</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>8</From>
+              <To>9</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>9</From>
+              <To>10</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>10</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>11</From>
+              <To>10</To>
+              <Label>Source2</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q3:ApproximatePolygon">
+          <q3:Method>DouglasPeucker</q3:Method>
+          <q3:Eps>3</q3:Eps>
+          <q3:Recursive>true</q3:Recursive>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Sink">
+        <Name>DrawContours</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q3:DrawContours">
+                <q3:MaxLevel>1</q3:MaxLevel>
+                <q3:Thickness>-1</q3:Thickness>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:UpdateTexture">
+                <q1:ShaderName>Image</q1:ShaderName>
+                <q1:TextureName>tex</q1:TextureName>
+                <q1:InternalFormat>Rgba</q1:InternalFormat>
+              </Combinator>
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="TakeUntil" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:WindowClosed" />
+      </Expression>
+    </Nodes>
+    <Edges>
+      <Edge>
+        <From>0</From>
+        <To>21</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>1</From>
+        <To>16</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>2</From>
+        <To>1</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>3</From>
+        <To>2</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>4</From>
+        <To>19</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>5</From>
+        <To>4</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>6</From>
+        <To>5</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>7</From>
+        <To>6</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>10</From>
+        <To>8</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>11</From>
+        <To>9</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>12</From>
+        <To>10</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>13</From>
+        <To>12</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>14</From>
+        <To>11</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>14</From>
+        <To>13</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>15</From>
+        <To>14</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>16</From>
+        <To>0</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>17</From>
+        <To>18</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>19</From>
+        <To>20</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>20</From>
+        <To>3</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>22</From>
+        <To>21</To>
+        <Label>Source2</Label>
+      </Edge>
+    </Edges>
+  </Workflow>
+  <ExtensionTypes>
+    <Type>Bonsai.Reactive.Switch, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.SampleOnUpdateFrame, Bonsai.Shaders, Version=0.11.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.PythonTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.BinaryRegionAnalysis, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.FindContours, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.Threshold, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.Grayscale, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.CameraCapture, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.CreateLookAt, Bonsai.Shaders, Version=0.11.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Zip, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.MultiplyBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.CreateOrthographic, Bonsai.Shaders, Version=0.11.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Physics.Collision.CreateHashSpace, Bonsai.Physics, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Physics.CreateWorld, Bonsai.Physics, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateFrame, Bonsai.Shaders, Version=0.11.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.CombineLatest, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.InputMappingBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Physics.Collision.CreateTriMesh, Bonsai.Physics, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.TakeUntil, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.WindowClosed, Bonsai.Shaders, Version=0.11.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.Timer, Bonsai.Shaders, Version=0.11.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Physics.CreateBody, Bonsai.Physics, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Physics.BodyTransform, Bonsai.Physics, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateUniform, Bonsai.Shaders, Version=0.11.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.DrawShader, Bonsai.Shaders, Version=0.11.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.SinkBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Physics.CreateSphereMass, Bonsai.Physics, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Physics.Collision.CreateSphere, Bonsai.Physics, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Physics.Joints.CreatePlane2D, Bonsai.Physics, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.ApproximatePolygon, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.DrawContours, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Shaders.UpdateTexture, Bonsai.Shaders, Version=0.11.0.0, Culture=neutral, PublicKeyToken=null</Type>
+  </ExtensionTypes>
+</WorkflowBuilder>
