@@ -1,15 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<WorkflowBuilder Version="2.2.0-ctp">
-  <Workflow xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns:q2="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp" xmlns:q3="clr-namespace:Bonsai.Audio;assembly=Bonsai.Audio" xmlns:q4="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns="https://horizongir.org/bonsai">
+<WorkflowBuilder Version="2.2.1">
+  <Workflow xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns:q2="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp" xmlns:q3="clr-namespace:Bonsai.Audio;assembly=Bonsai.Audio" xmlns:q4="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q5="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns="https://horizongir.org/bonsai">
     <Nodes>
       <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q1:FileCapture">
-          <q1:FileName>video.avi</q1:FileName>
-          <q1:PlaybackRate>0</q1:PlaybackRate>
-          <q1:StartPosition>0</q1:StartPosition>
-          <q1:PositionUnits>Frames</q1:PositionUnits>
-          <q1:Loop>true</q1:Loop>
-          <q1:Playing>true</q1:Playing>
+        <Combinator xsi:type="q1:Resize">
+          <q1:Size>
+            <q1:Width>1280</q1:Width>
+            <q1:Height>720</q1:Height>
+          </q1:Size>
+          <q1:Interpolation>Linear</q1:Interpolation>
         </Combinator>
       </Expression>
       <Expression xsi:type="Scan">
@@ -31,7 +30,7 @@
             <Expression xsi:type="Add" />
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:WarpAffine">
-                <q1:Transform>1.008028,0,-2.890091;0,1.008028,-2.890091</q1:Transform>
+                <q1:Transform>1.001499,0,-0.5397463;0,1.001499,-0.5397463</q1:Transform>
                 <q1:Flags>Linear</q1:Flags>
                 <q1:FillValue>
                   <q1:Val0>0</q1:Val0>
@@ -72,8 +71,8 @@
                 </q1:Translation>
                 <q1:Rotation>0</q1:Rotation>
                 <q1:Scale>
-                  <q1:X>1.008028</q1:X>
-                  <q1:Y>1.008028</q1:Y>
+                  <q1:X>1.0014993</q1:X>
+                  <q1:Y>1.0014993</q1:Y>
                 </q1:Scale>
               </Combinator>
             </Expression>
@@ -158,6 +157,7 @@
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="q3:AudioCapture">
           <q3:Frequency>44100</q3:Frequency>
+          <q3:SampleFormat>Mono16</q3:SampleFormat>
           <q3:BufferLength>10</q3:BufferLength>
         </Combinator>
       </Expression>
@@ -294,6 +294,115 @@ def process(value):
           </Edges>
         </Workflow>
       </Expression>
+      <Expression xsi:type="WindowWorkflow">
+        <Name>FileSource</Name>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="WorkflowOutput" />
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:FileCapture">
+                <q1:FileName>Videos\Color.avi</q1:FileName>
+                <q1:PlaybackRate>0</q1:PlaybackRate>
+                <q1:StartPosition>0</q1:StartPosition>
+                <q1:PositionUnits>Frames</q1:PositionUnits>
+                <q1:Loop>true</q1:Loop>
+                <q1:Playing>true</q1:Playing>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringFileCapture">
+              <MemberName>FileName</MemberName>
+              <Name />
+            </Expression>
+            <Expression xsi:type="NestedWorkflow">
+              <Name>RandomPath</Name>
+              <Description>Picks a random path from the list of files.</Description>
+              <Workflow>
+                <Nodes>
+                  <Expression xsi:type="q4:PythonTransform">
+                    <q4:Script>from System import Random
+
+index = 0
+generator = Random()
+
+@returns(str)
+def process(value):
+  global index
+  i = index
+  while i == index and len(value) &gt; 1:
+    i = generator.Next(len(value))
+  index = i
+  return value[index]</q4:Script>
+                  </Expression>
+                  <Expression xsi:type="WorkflowInput">
+                    <Name>Source1</Name>
+                  </Expression>
+                  <Expression xsi:type="WorkflowOutput" />
+                </Nodes>
+                <Edges>
+                  <Edge>
+                    <From>0</From>
+                    <To>2</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>1</From>
+                    <To>0</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                </Edges>
+              </Workflow>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q5:GetFiles">
+                <q5:Path>Videos</q5:Path>
+                <q5:SearchPattern>*.avi</q5:SearchPattern>
+                <q5:SearchOption>TopDirectoryOnly</q5:SearchOption>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+              <MemberName>Path</MemberName>
+              <Name>Path</Name>
+              <Value>Videos</Value>
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>1</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>5</From>
+              <To>4</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Switch" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Timer">
+          <DueTime>PT0S</DueTime>
+          <Period>PT5S</Period>
+        </Combinator>
+      </Expression>
     </Nodes>
     <Edges>
       <Edge>
@@ -326,10 +435,25 @@ def process(value):
         <To>5</To>
         <Label>Source1</Label>
       </Edge>
+      <Edge>
+        <From>8</From>
+        <To>9</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>9</From>
+        <To>0</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>10</From>
+        <To>8</To>
+        <Label>Source1</Label>
+      </Edge>
     </Edges>
   </Workflow>
   <ExtensionTypes>
-    <Type>Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.Resize, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Reactive.Zip, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.AddBuilder, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.WarpAffine, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
@@ -338,12 +462,18 @@ def process(value):
     <Type>Bonsai.Vision.AffineTransform, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.PropertyMappingBuilder, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.ScanBuilder, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Audio.AudioCapture, Bonsai.Audio, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Audio.AudioCapture, Bonsai.Audio, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Dsp.Abs, Bonsai.Dsp, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Dsp.Sum, Bonsai.Dsp, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Scripting.PythonTransform, Bonsai.Scripting, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Reactive.CombineLatest, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.FloatProperty, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.Single, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Expressions.FloatProperty, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.IO.GetFiles, Bonsai.System, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.GetFiles, Bonsai.System, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Switch, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Timer, Bonsai.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null</Type>
   </ExtensionTypes>
 </WorkflowBuilder>
